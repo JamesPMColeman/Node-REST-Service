@@ -12,5 +12,6 @@ const app = express();
 
 app.use(morgan('dev'));
 app.get('/api/version', (req, res) => res.status(200).send(pkg.version));
+require('./lib/search.js')(app, nconf.get('es'));
 app.listen(nconf.get('port'), () => console.log('Ready.'));
 
