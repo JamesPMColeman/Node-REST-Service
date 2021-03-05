@@ -5,6 +5,7 @@
  */
 'use strict'
 const request = require('request');
+const rp = require('request-promise');
 module.exports = (app, es) => {
 
 	const url = `http://${es.host}:${es.port}/${es.books_index}/book/_search`;
@@ -64,22 +65,23 @@ module.exports = (app, es) => {
 				}
 			}
 		};
-		const options = {url, json: true, body: esReqBody};
-		const promise = new Promise((resolve, reject) => {
-			request.get(options, (err, esRes, esResBody) => {
-				
-				if (err) {
-					reject({error: err});
-					return;
-				}
-				if (esRes.statusCode !== 200) {
-					reject({error: esResBody});
-					return;
-				}
-				resolve(esResBody);
-			});
-		});
-		promise
+//		const options = {url, json: true, body: esReqBody};
+//		const promise = new Promise((resolve, reject) => {
+//			request.get(options, (err, esRes, esResBody) => {
+//				
+//				if (err) {
+//					reject({error: err});
+//					return;
+//				}
+//				if (esRes.statusCode !== 200) {
+//					reject({error: esResBody});
+//					return;
+//				}
+//				resolve(esResBody);
+//			});
+//		});
+//		promise
+		rp({url, json: true, body: esReqBody})
 			.then(esResBody => res.status(200).json(esResBody.suggest.suggestions))
 			.catch(({error}) => res.status(error.status || 502).json(error));
 	});
