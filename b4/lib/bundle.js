@@ -98,5 +98,29 @@ module.exports = (app, es) => {
 			res.status(esResErr.statusCode || 502).json(esResErr.error);
 		}
 	});
+	
+	/**
+	 * Delete a bundle entirely.
+	 * curl -X DELETE http://<host>:<port>/api/bundle/<id>
+	 */
+	app.delete('/api/bundle/:id', async (req, res) => {
+		const bundleUrl = `${url}/${req.params.id}`;
+
+		try {
+			const bundleRes = await rp({url: bundleUrl, json: true});
+			const {_source: bundle, _version: version} = bundleRes;
+
+			const esResBody = await rp.delete({
+				url: bundleUrl,
+				qs: { version },
+				body: bundle,
+				json: true,
+			});
+			res.status(200).json(esResBody);
+		} catch (esResErr) {
+			res.status(esResErr.statusCode || 502).json(esResErr.error);
+		}
+	
+	});
 		
 };
