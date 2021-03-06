@@ -56,5 +56,47 @@ module.exports = (app, es) => {
 			res.status(esResErr.statusCode || 502).json(esResErr.error);
 		}
 	});
+	
+	/**
+	 * Put a book into a bundle by it's id.
+	 * curl -X PUT http://<host>:<port>/api/bundle/<id>/book/<pgid>
+	 */
+	app.put('/api/bundle/:id/book/:pgid', async (req, res) => {
+		const bundleUrl = `${url}/${req.params.id}`;
+
+		const bookUrl =
+			`http://${es.host}:${es.port}` +
+			`/${es.books_index}/book/${req.params.pgid}`;
+
+		try {
+			// Request the bundle and book
+			const [bundleRes, bookRes] = await Promise.all([
+				rp({url: bundleUrl, json: true}),
+				rp({url: bookUrl, json: true}),
+			]);	
+			// Extract bunle and book info from promise responses
+			const {_source: bundle, _version: version} = bundleRes;
+			const {_source: book} = bookRes;
+			
+			const idx = bundle.books.findIndex(book => book.id === req.params.pgid);
+			if (idx === -1) {
+				bundle.books.push({
+					id: req.params.pgid,
+					title: book.title,
+				});
+			}
+			
+			// Put the updated bundle back in the index.
+			const esResBody = await rp.put({
+				url: bundleUrl,
+				qs: { version },
+				body: bundle,
+				json: true,
+			});
+			res.status(200).json(esResBody);
+		} catch (esResErr) {
+			res.status(esResErr.statusCode || 502).json(esResErr.error);
+		}
+	});
 		
 };
